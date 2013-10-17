@@ -1,9 +1,13 @@
 <?php
 namespace Person;
-use Config\Config;
-use DB\Mongo;
 
 class Person {
+	private $db;
+
+	public function __construct ($db) {
+		$this->db = $db;
+	}
+
 	private function create () {
 
 	}
