@@ -28,9 +28,11 @@ class Person {
     private $db;
     private $id;
     private $current = false;
+    private $config;
 
     public function __construct ($db, $config) {
         $this->db = $db;
+        $this->config = $config;
         if (isset($_SESSION['user']) && isset($_SESSION['user']['_id'])) {
             $this->current = $_SESSION['user']['_id'];
         }
@@ -44,8 +46,8 @@ class Person {
         return false;
     }
 
-    public function create (Array $attributes) {
-        $salt = $config->auth['salt'];
+    public function create ($attributes) {
+        $salt = $this->config->auth['salt'];
         if (isset($attributes['password'])) {
             $attributes['password'] = sha1($salt . 'password');
         } else {
@@ -65,6 +67,7 @@ class Person {
             return 'Error: ' . $e->getMessage();
         }
         $_SESSION['user'] = $attributes;
+        $this->current = (string)$id;
         return true;
     }
 
@@ -78,7 +81,7 @@ class Person {
     }
 
     public function findByEmail ($email) {
-        $this->db->collection('users')->findOne(['email' => strtolower(trim($email))]);
+        $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))]);
         if (isset($check['_id'])) {
             $this->current = $check['_id'];
             return $this->current;
