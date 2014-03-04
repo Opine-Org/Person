@@ -107,16 +107,37 @@ class Person {
         $this->operation(['$pull' => ['groups' => $group]]);
     }
 
-    public function recordAdd ($dbURI, $description, $unique=false) {
-        if ($unique == true) {
-            if ($this->recordCheck($collection) === false) {
-
+    public function recordAdd ($dbURI, $description, $unique=false, $override=true) {
+        $foundDbURI = false;
+        if ($unique == true && $this->recordCheck($dbURI, $foundDbURI) === true) {
+            if ($override) {
+                $this->operation(['$pull' => ['records.dbURI' => $foundDbURI]]);
+            } else {
+                return false;
             }
         }
+        $this->operation(['$push' => ['records' => [
+            '_id' => new \MongoId(),
+            'dbURI' => $dbURI,
+            'description' => $description,
+            'created_date' => new \MongoDate(strtotime('now'))
+        ]]]);
     }
 
-    public function recordCheck ($collection) {
-
+    public function recordCheck ($dbURI) {
+        $parts = explode(':', $dbURI);
+        array_pop($parts);
+        $dbURI = implode(':', $parts);
+        $result = $this->db->collection('users')->findOne([
+            '_id' => $this->db->id($this->current),
+            'records.dbURI' => [
+                '$regex' => '/^' . $dbURI . '/'
+            ]
+        ]);
+        if (isset($result['_id'])) {
+            return true;
+        }
+        return false;
     }
 
     public function commentAdd ($id) {
