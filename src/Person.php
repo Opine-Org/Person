@@ -117,11 +117,11 @@ class Person {
         $this->operation(['$pull' => ['groups' => $group]]);
     }
 
-    public function recordAdd ($dbURI, $description, $unique=false, $override=true) {
+    public function recordAdd ($dbURI, $type, $description, $uniqueType=false, $override=false) {
         $foundDbURI = false;
-        if ($unique == true && $this->recordCheck($dbURI, $foundDbURI) === true) {
-            if ($override) {
-                $this->operation(['$pull' => ['records.dbURI' => $foundDbURI]]);
+        if ($uniqueType == true && $this->recordCheck($type, $foundDbURI) === true) {
+            if ($override === true) {
+                $this->operation(['$pull' => ['records' => ['dbURI' => $foundDbURI]]]);
             } else {
                 return false;
             }
@@ -129,67 +129,69 @@ class Person {
         $this->operation(['$push' => ['records' => [
             '_id' => new \MongoId(),
             'dbURI' => $dbURI,
+            'type' => $type,
             'description' => $description,
             'created_date' => new \MongoDate(strtotime('now'))
         ]]]);
     }
 
-    private function recordCheck ($dbURI) {
-        $parts = explode(':', $dbURI);
-        array_pop($parts);
-        $dbURI = implode(':', $parts);
+    private function recordCheck ($type, &$foundDbURI=false) {
         $result = $this->db->collection('users')->findOne([
             '_id' => $this->db->id($this->current),
-            'records.dbURI' => [
-                '$regex' => '/^' . $dbURI . '/'
+            'records.type' => $type
+        ], [
+            'records' => [
+                '$elemMatch' => [
+                    'type' => $type
+                ]
             ]
         ]);
-        if (isset($result['_id'])) {
+        if (isset($result['records']) && count($result['records'] > 0) && isset($result['records'][0]['_id'])) {
+            $foundDbURI = $result['records'][0]['dbURI'];
             return true;
         }
         return false;
     }
 
-    public function commentAdd ($id) {
-
-    }
-
     public function attributesSet (Array $attributes) {
-
+        $this->operation([
+            '$set' => $attributes
+        ]);
     }
 
     public function passwordSet($password) {
-
+        $this->attributesSet([
+            'password' => $this->password($password)
+        ]);
     }
 
-    public function passwordResetRequest () {
-
+    public function photoSet(Array $imageUrl) {
+        $this->attributesSet([
+            'image' => $imageUrl
+        ]);   
     }
 
-    public function addressSet(Array $address) {
-
+    public function activityAdd($type, $description, $dbURI=false) {
+        $this->operation(['$push' => ['activity' => [
+            '_id' => new \MongoId(),
+            'dbURI' => $dbURI,
+            'type' => $type,
+            'description' => $description,
+            'created_date' => new \MongoDate(strtotime('now'))
+        ]]]);
     }
 
-    public function photoSet(Array $image) {
-
-    }
-
-    //notes
-    public function noteAdd ($message) {
-
-    }
-
-    //activities
-    public function activityAdd($type, $message, $date=false) {
-
-    }
-
-    //classifications
     public function classify ($tag) {
-
+        if ($this->current === false) {
+            return false;
+        }
+        $this->operation(['$addToSet' => ['classification_tags' => $tag]]);
     }
 
     public function declassify ($tag) {
-
+        if ($this->current === false) {
+            return false;
+        }
+        $this->operation(['$pull' => ['classification_tags' => $tag]]);
     }
 }

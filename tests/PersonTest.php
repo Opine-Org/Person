@@ -140,7 +140,7 @@ class PersonTest extends \PHPUnit_Framework_TestCase {
         $recordId = new \MongoId();
         $dbURI = 'membership:' . (string)$recordId;
         $this->personCreate($id);
-        $this->person->recordAdd($dbURI, 'Memership Form');
+        $this->person->recordAdd($dbURI, 'membership', 'Memership Form');
         $person = $this->person->findById($id);
         $found = false;
         foreach ($person['records'] as $record) {
@@ -152,6 +152,48 @@ class PersonTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testPersonRecordAddUnique () {
+        $id = new \MongoId();
+        $recordId = new \MongoId();
+        $dbURI = 'membership:' . (string)$recordId;
+        $this->personCreate($id);
+        for ($i=0; $i < 3; $i++) {
+            $this->person->recordAdd($dbURI, 'membership', 'Memership Form', true);
+        }
+        $person = $this->person->findById($id);
+        $count = 0;
+        foreach ($person['records'] as $record) {
+            if ($record['dbURI'] == $dbURI) {
+                $count++;
+            }
+        }
+        $single = false;
+        if ($count == 1) {
+            $single = true;
+        }
+        $this->assertTrue($single);
+    }
 
+    public function testPersonRecordAddUniqueOverride () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $this->person->recordAdd('membership:' . (string)new \MongoId(), 'membership', 'Memership Form', true);
+        $this->person->recordAdd('membership:' . (string)new \MongoId(), 'membership', 'Memership Form 2', true, true);
+        $person = $this->person->findById($id);
+        $count = 0;
+        foreach ($person['records'] as $record) {
+            $count++;
+        }
+        $single = false;
+        if ($count == 1) {
+            $single = true;
+        }
+        $this->assertTrue($single);
+        $replaced = false;
+        foreach ($person['records'] as $record) {
+            if ($record['description'] == 'Memership Form 2') {
+                $replaced = true;
+            }
+        }
+        $this->assertTrue($replaced);
     }
 }
