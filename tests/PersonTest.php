@@ -136,10 +136,22 @@ class PersonTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testPersonRecordAdd () {
-
+        $id = new \MongoId();
+        $recordId = new \MongoId();
+        $dbURI = 'membership:' . (string)$recordId;
+        $this->personCreate($id);
+        $this->person->recordAdd($dbURI, 'Memership Form');
+        $person = $this->person->findById($id);
+        $found = false;
+        foreach ($person['records'] as $record) {
+            if ($record['dbURI'] == $dbURI) {
+                $found = true;
+            }
+        }
+        $this->assertTrue($found);
     }
 
     public function testPersonRecordAddUnique () {
 
-    }    
+    }
 }
