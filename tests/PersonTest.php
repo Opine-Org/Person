@@ -13,7 +13,133 @@ class PersonTest extends \PHPUnit_Framework_TestCase {
         $this->db = $container->db;
     }
 
-    public function testPerson () {
-        $this->assertFalse(false);
+    public function testPersonNotAvailableInSession () {
+        $result = $this->person->available();
+        $this->assertFalse($result);
     }
+
+    public function testPersonAvailableInSession () {
+        $_SESSION['user'] = [
+            '_id' => '5314f7553698bb5228b15cc2'
+        ];
+        $result = $this->person->available();
+        $this->assertTrue($result);
+        unset($_SESSION['user']);
+    }
+
+    private function personCreate ($id) {
+        $this->person->create([
+            '_id' => $id,
+            'email' => 'test@unit.com',
+            'password' => 'secret'
+        ]);
+    }
+
+    public function testPersonCreate () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $same = false;
+        if ((string)$id == (string)$this->person->current()) {
+            $same = true;
+        }
+        $this->assertTrue($same);
+    }
+
+    public function testPersonNotFoundById () {
+        $id = new \MongoId();
+        $result = $this->person->findById($id);
+        $this->assertFalse($result);
+    }
+
+    public function testPersonFoundById () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $person = $this->person->findById($id);
+        $found = false;
+        if ((string)$id == (string)$person['_id']) {
+            $found = true;
+        }
+        $this->assertTrue($found);
+    }
+
+    public function testPersonPasswordCorrect () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $person = $this->person->findById($id);
+        $password = $this->person->password('secret');
+        $matched = false;
+        if ($person['password'] == $password) {
+            $matched = true;
+        }
+        $this->assertTrue($matched);
+    }
+
+    public function testPersonNotFoundByEmail () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $person = $this->person->findByEmail('nomatch@unit.com');
+        $this->assertFalse($person);
+    }
+
+    public function testPersonFindByEmail () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $email = 'test@unit.com';
+        $person = $this->person->findByEmail($email);
+        $same = false;
+        if ($email == $person['email']) {
+            $same = true;
+        }
+        $this->assertTrue($same);
+    }
+
+    public function testPersonGroupJoin () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $group = 'Testing';
+        $this->person->groupJoin($group);
+        $person = $this->person->findById($id);
+        $found = false;
+        if (in_array($group, $person['groups'])) {
+            $found = true;
+        }
+        $this->assertTrue($found);
+    }
+
+    public function testPersonGroupLeave () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $group = 'Testing';
+        $this->person->groupJoin($group);
+        $this->person->groupLeave($group);
+        $person = $this->person->findById($id);
+        $found = false;
+        if (in_array($group, $person['groups'])) {
+            $found = true;
+        }
+        $this->assertFalse($found);
+    }
+
+    public function testPersonGroupJoinUnique () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $group = 'Testing';
+        $this->person->groupJoin($group);
+        $this->person->groupJoin($group);
+        $person = $this->person->findById($id);
+        $matched = false;
+        $count = count($person['groups']);
+        if ($count == 1) {
+            $matched = true;
+        }
+        $this->assertTrue($matched);
+    }
+
+    public function testPersonRecordAdd () {
+
+    }
+
+    public function testPersonRecordAddUnique () {
+
+    }    
 }

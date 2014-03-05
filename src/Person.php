@@ -30,6 +30,10 @@ class Person {
     private $current = false;
     private $config;
 
+    public function current () {
+        return $this->current;
+    }
+
     public function __construct ($db, $config) {
         $this->db = $db;
         $this->config = $config;
@@ -46,28 +50,34 @@ class Person {
         return false;
     }
 
-    public function create ($attributes) {
+    public function password ($password) {
         $salt = $this->config->auth['salt'];
+        return sha1($salt . $password);
+    }
+
+    public function create ($attributes) {
         if (isset($attributes['password'])) {
-            $attributes['password'] = sha1($salt . 'password');
+            $attributes['password'] = $this->password($attributes['password']);
         } else {
-            $attributes['password'] = sha1($salt . uniqid());
+            $attributes['password'] = $this->password(uniqid());
         }
         if (isset($attributes['email'])) {
             $attributes['email'] = strtolower(trim($attributes['email']));
         }
-        $id = new \MongoId();
-        $attributes['_id'] = $id;
-        $dbURI = 'users:' . (string)$id;
+        if (!isset($attributes['_id'])) {
+            $attributes['_id'] = new \MongoId();
+        } else {
+            $attributes['_id'] = $this->db->id($attributes['_id']);
+        }
+        $dbURI = 'users:' . (string)$attributes['_id'];
         $attributes['created_date'] = new \MongoDate(strtotime('now'));
-        $attributes['_id'] = $id;
         try {
             $this->db->documentStage($dbURI, $attributes)->upsert();
         } catch (\Exception $e) {
             return 'Error: ' . $e->getMessage();
         }
         $_SESSION['user'] = $attributes;
-        $this->current = (string)$id;
+        $this->current = (string)$attributes['_id'];
         return true;
     }
 
@@ -75,7 +85,7 @@ class Person {
         $check = $this->db->collection('users')->findOne(['_id' => $this->db->id($id)]);
         if (isset($check['_id'])) {
             $this->current = $check['_id'];
-            return $this->current;
+            return $check;
         }
         return false;
     }
@@ -84,7 +94,7 @@ class Person {
         $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))]);
         if (isset($check['_id'])) {
             $this->current = $check['_id'];
-            return $this->current;
+            return $check;
         }
         return false;
     }
@@ -124,7 +134,7 @@ class Person {
         ]]]);
     }
 
-    public function recordCheck ($dbURI) {
+    private function recordCheck ($dbURI) {
         $parts = explode(':', $dbURI);
         array_pop($parts);
         $dbURI = implode(':', $parts);
