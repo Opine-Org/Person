@@ -81,8 +81,8 @@ class Person {
         return true;
     }
 
-    public function findById ($id) {
-        $check = $this->db->collection('users')->findOne(['_id' => $this->db->id($id)]);
+    public function findById ($id, $fields=[]) {
+        $check = $this->db->collection('users')->findOne(['_id' => $this->db->id($id)], $fields);
         if (isset($check['_id'])) {
             $this->current = $check['_id'];
             return $check;
@@ -90,8 +90,8 @@ class Person {
         return false;
     }
 
-    public function findByEmail ($email) {
-        $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))]);
+    public function findByEmail ($email, $fields=[]) {
+        $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))], $fields);
         if (isset($check['_id'])) {
             $this->current = $check['_id'];
             return $check;
@@ -165,20 +165,22 @@ class Person {
         ]);
     }
 
-    public function photoSet(Array $imageUrl) {
+    public function photoSet(Array $image) {
         $this->attributesSet([
-            'image' => $imageUrl
+            'image' => $image
         ]);   
     }
 
-    public function activityAdd($type, $description, $dbURI=false) {
-        $this->operation(['$push' => ['activity' => [
+    public function activityAdd($type, $description) {
+        $activity = [
             '_id' => new \MongoId(),
-            'dbURI' => $dbURI,
             'type' => $type,
             'description' => $description,
             'created_date' => new \MongoDate(strtotime('now'))
-        ]]]);
+        ];
+        $this->operation(['$push' => ['activity' => $activity]]);
+        $activity['user_id'] = $this->current;
+        $this->db->collection('activity_stream')->save($activity);
     }
 
     public function classify ($tag) {

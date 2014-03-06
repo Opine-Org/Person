@@ -196,4 +196,78 @@ class PersonTest extends \PHPUnit_Framework_TestCase {
         }
         $this->assertTrue($replaced);
     }
+
+    public function testPersonSetAttribute () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $this->person->attributesSet([
+            'first_name' => 'Tom'
+        ]);
+        $person = $this->person->findById($id);
+        $matched = false;
+        if ($person['first_name'] == 'Tom') {
+            $matched = true;
+        }
+        $this->assertTrue($matched);
+    }
+
+    public function testPersonSetPhoto () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $image = [
+            'name' => 'speaking.jpg',
+            'type' => 'image/jpeg',
+            'size' => '141034',
+            'md5' => '6ff9a302741e3cad66b03bbd26c5ec25',
+            'width' => '600',
+            'height' => '400',
+            'url' => 'http://ilyasah-site.virtuecenter.com/storage/2013-12-02-16/speaking.jpg'
+        ];
+        $this->person->photoSet($image);
+        $person = $this->person->findById($id);
+        $matched = false;
+        if ($person['image']['url'] == $image['url']) {
+            $matched = true;
+        }
+        $this->assertTrue($matched);   
+    }
+
+    public function testPersonActivityAdd () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $this->person->activityAdd('subscribe', 'Subscribed to mailing list');
+        $person = $this->person->findById($id, ['activity']);
+        $matched = false;
+        if (isset($person['activity']) && count($person['activity']) == 1) {
+            $matched = true;
+        }
+        $this->assertTrue($matched);
+    }
+
+    public function testPersonClassify () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $tag = 'Testing';
+        $this->person->classify($tag);
+        $person = $this->person->findById($id, ['classification_tags']);
+        $found = false;
+        if (in_array($tag, $person['classification_tags'])) {
+            $found = true;
+        }
+        $this->assertTrue($found);
+    }
+
+    public function testPersonDeclassify () {
+        $id = new \MongoId();
+        $this->personCreate($id);
+        $tag = 'Testing';
+        $this->person->classify($tag);
+        $this->person->declassify($tag);
+        $person = $this->person->findById($id, ['classification_tags']);
+        $found = false;
+        if (in_array($tag, $person['classification_tags'])) {
+            $found = true;
+        }
+        $this->assertFalse($found);
+    }
 }
