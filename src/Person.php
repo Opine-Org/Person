@@ -50,6 +50,20 @@ class Person {
         return false;
     }
 
+    public function availableFindOrCreate ($attributes) {
+        $available = $this->available();
+        if ($available === true) {
+            return true;
+        }
+        if (!isset($attributes['email'])) {
+            return false;
+        }
+        if ($this->findByEmail(strtolower($attributes['email'])) !== false) {
+            return true;
+        }
+        return $this->create($attributes);
+    }
+
     public function password ($password) {
         $salt = $this->config->auth['salt'];
         return sha1($salt . $password);
@@ -65,7 +79,7 @@ class Person {
             $attributes['email'] = strtolower(trim($attributes['email']));
         }
         if (!isset($attributes['_id'])) {
-            $attributes['_id'] = new \MongoId();
+            $attributes['_id'] = $this->db->id();
         } else {
             $attributes['_id'] = $this->db->id($attributes['_id']);
         }
@@ -157,18 +171,21 @@ class Person {
         $this->operation([
             '$set' => $attributes
         ]);
+        return $this;
     }
 
     public function passwordSet($password) {
         $this->attributesSet([
             'password' => $this->password($password)
         ]);
+        return $this;
     }
 
     public function photoSet(Array $image) {
         $this->attributesSet([
             'image' => $image
-        ]);   
+        ]);
+        return $this;
     }
 
     public function activityAdd($type, $description) {
@@ -181,6 +198,7 @@ class Person {
         $this->operation(['$push' => ['activity' => $activity]]);
         $activity['user_id'] = $this->current;
         $this->db->collection('activity_stream')->save($activity);
+        return $this;
     }
 
     public function classify ($tag) {
@@ -188,6 +206,7 @@ class Person {
             return false;
         }
         $this->operation(['$addToSet' => ['classification_tags' => $tag]]);
+        return $this;
     }
 
     public function declassify ($tag) {
@@ -195,5 +214,55 @@ class Person {
             return false;
         }
         $this->operation(['$pull' => ['classification_tags' => $tag]]);
+        return $this;
+    }
+
+    public function addressBillingSet (array $address) {
+        $this->addressValidate($address);
+        $this->operation([
+            '$set' => [
+                'billing_address' => $address
+            ]
+        ]);
+        $this->addressAdd($address);
+        return $this;
+    }
+
+    public function addressAdd (array $address) {
+        $this->addressValidate($address);
+        $match = false;
+        $user = $this->db->collection('users')->findOne(['_id' => $this->db->id($this->current)], ['addresses']);
+        if (isset($user['addresses']) && is_array($user['addresses'])) {
+            foreach ($user['addresses'] as $found) {
+                if (
+                        $this->prepMatch($found['city']) == $this->prepMatch($address['city']) && 
+                        $this->prepMatch($found['address']) == $this->prepMatch($address['address']) &&
+                        $this->prepMatch($found['zipcode']) == $this->prepMatch($address['zipcode'])
+                ) {
+                    $match = true;
+                    break;
+                }
+            }
+        }
+        if ($match === false) {
+            $this->db->documentStage('users:' . (string)$this->current . ':addresses:' . (string)$this->db->id(), $address)->upsert();
+        }
+        return $this;
+    }
+
+    private function prepMatch ($string) {
+        return substr(strtolower(str_replace(['    ', '   ', '  '], ' ', trim($string))), 0, 5);
+    }
+
+    private function addressValidate (array $address) {
+        $fields = ['address', 'city', 'state', 'zipcode'];
+        foreach ($fields as $field) {
+            if (!isset($address[$field]) || empty($address[$field])) {
+                throw new AddressException('Address missing: ' . $field);
+            }
+        }
+        return true;
     }
 }
+
+class AddressException extends \Exception {}
