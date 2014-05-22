@@ -1,10 +1,18 @@
 <?php
-namespace Registration\Field;
+namespace Person\Field;
 
 class ActivityStream {
+	public $services = [
+		'separation'
+	];
+
     public function render ($field) {
-        //this should be a wrapper to an "app" that uses the "activity stream collection"
-        //can a collection live inside a bundle?
-        return '';
+        $this->separation->
+            app('bundles/Registration/app/collections/activity_stream')->
+            layout('Person/collections/activity_stream')->
+            args('streams', [
+                'person_id' => $this->document['_id']
+            ])->template()->
+            write();
     }
 }
