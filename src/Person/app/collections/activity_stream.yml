@@ -1,0 +1,6 @@
+binding:
+    activities:
+        url: '%dataAPI%/Person/json-data/activity_stream/all/10/0/{"display_date":-1}'
+        args: []
+        partial: 'Person/collections/activity.hbs'
+        type: 'Collection'
