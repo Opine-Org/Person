@@ -195,7 +195,6 @@ class Person {
             'description' => $description,
             'created_date' => new \MongoDate(strtotime('now'))
         ];
-        //$this->operation(['$push' => ['activity' => $activity]]);
         $activity['user_id'] = $this->current;
         $this->db->collection('activity_stream')->save($activity);
         return $this;
