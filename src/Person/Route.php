@@ -13,12 +13,14 @@ class Route {
     }
 
     public function paths ($bundleRoot='') {
-    	$this->route->get('/Person/stream', function () {
+    	/*
+        $this->route->get('/Person/stream', function () {
     		$this->separation->app('bundles/Person/app/collections/activity_stream')->
     			layout('Person/collections/activity_stream')->
     			template()->
     			write();
     	});
+        */
     }
 
     public function location () {

@@ -8,8 +8,8 @@
 namespace Person\Manager;
 
 class Users {
-    private $field = false;
-    public $collection = 'users';
+    public $field = false;
+    public $collection = 'Users';
     public $title = 'People';
     public $titleField = 'first_name';
     public $singular = 'Person';
@@ -84,7 +84,7 @@ class Users {
         ];
     }
 
-    function homepageField () {
+    public function homepageField () {
         return [
             'display' => 'InputText',
             'name' => 'homepage'

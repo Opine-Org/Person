@@ -6,9 +6,9 @@ class PersonTest extends \PHPUnit_Framework_TestCase {
     private $db;
 
     public function setup () {
-        date_default_timezone_set('America/New_York');
-        $root = __DIR__;
-        $container = new Container($root, $root . '/container.yml');
+        date_default_timezone_set('UTC');
+        $root = __DIR__ . '/../public';
+        $container = new Container($root, $root . '/../container.yml');
         $this->person = $container->person;
         $this->db = $container->db;
     }
