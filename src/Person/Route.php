@@ -2,28 +2,17 @@
 namespace Opine\Person;
 
 class Route {
-    private $root;
     private $route;
-    private $separation;
 
-    public function __construct ($root, $route, $separation) {
-        $this->root = $root;
+    public function __construct ($route) {
         $this->route = $route;
-        $this->separation = $separation;
     }
 
-    public function paths ($bundleRoot='') {
-    	/*
-        $this->route->get('/Person/stream', function () {
-    		$this->separation->app('bundles/Person/app/collections/activity_stream')->
-    			layout('Person/collections/activity_stream')->
-    			template()->
-    			write();
-    	});
-        */
+    public function paths () {
+        $this->route->get('/Person/stream', 'personController@stream');
     }
 
-    public function location () {
+    public static function location () {
         return __DIR__;
     }
 }
