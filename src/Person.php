@@ -1,4 +1,4 @@
-`<?php
+<?php
 /**
  * Opine\Person
  *
@@ -262,6 +262,117 @@ class Person {
         }
         return true;
     }
+
+    public function sessionCheck (&$userId=false) {
+        if (isset($_SESSION['user']) && isset($_SESSION['user']['_id'])) {
+            $userId = $_SESSION['user']['_id'];
+            return true;
+        }
+        return false;
+    }
+
+    private function findAndEstablishSession ($criteria) {
+        $user = $this->db->collection('users')->findOne(
+            $criteria, [
+                '_id', 
+                'email', 
+                'first_name', 
+                'last_name', 
+                'groups', 
+                'created_date',
+                'image',
+                'groups'
+            ]);
+        if (!isset($user['_id'])) {
+            return false;
+        }
+        $_SESSION['user'] = $user;
+        $this->db->collection('login_history')->save([
+            'user_id' => $user['_id'],
+            'created_date' => new \MongoDate(strtotime('now'))
+        ]);
+        return true;
+    }
+
+    public function login ($identity, $password, $identityField='email', $criteria=false) {
+        if ($identityField == 'email') {
+            $identity = trim(strtolower($identity));
+        }
+        if ($criteria === false) {
+            $criteria = [
+                $identityField => $identity,
+                'password' => $this->passwordHash($password)
+            ];
+        }
+        return $this->findAndEstablishSession($criteria);
+    }
+
+    public function loginByUserId ($userId) {
+        $criteria = [
+            '_id' => $this->db->id($userId)
+        ];
+        return $this->findAndEstablishSession($criteria);
+    }
+
+    public function permission ($group) {
+        if (is_array($group)) {
+            foreach ($group as $subgroup) {
+                $result = $this->permission($subgroup);
+                if ($result === true) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (!isset($_SESSION['user']) || !isset($_SESSION['user']['groups'])) {
+            return false;
+        }
+        $groups = array_map('strtolower', $_SESSION['user']['groups']);
+        if (in_array('superadmin', $groups)) {
+            return true;
+        }
+        if (in_array(strtolower($group), $groups)) {
+            return true;
+        }
+        return false;
+    }
+
+    public function inGroupLike ($pattern) {
+        if (!isset($_SESSION['user']) || !isset($_SESSION['user']['groups'])) {
+            return false;
+        }
+        if (count(preg_grep($pattern, $_SESSION['user']['groups'])) > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public function logout () {
+        $_SESSION['user'] = [];
+    }
+
+    public function passwordHash ($password) {
+        $config = $this->config->auth;
+        return sha1($config['salt'] . $password);
+    }
+
+    public function passwordForgot ($email) {
+        //validate user
+        //enforce rate limit
+        //generate token
+        //email via topic
+    }
+
+    public function passwordChange ($id, $token, $password) {
+        //validate token
+        //change password, remove token
+    }
+
+
+
+
+
+
 }
 
 class AddressException extends \Exception {}
