@@ -20,4 +20,4 @@ services:
         arguments: ['@route']
     personController:
         class:     'Opine\Person\Controller'
-        arguments: ['@separation']
+        arguments: ['@layout']

@@ -1,6 +1,6 @@
-binding:
+regions:
     activities:
-        url: '%dataAPI%/Person/json-data/activity_stream/all/10/0/{"display_date":-1}'
+        url: '/Person/api/collection/ActivityStream/all/10/0/{"display_date":-1}'
         args: []
         partial: 'Person/collections/activity.hbs'
         type: 'Collection'

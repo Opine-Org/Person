@@ -3,11 +3,11 @@ namespace Person\Field;
 
 class ActivityStream {
 	public $services = [
-		'separation'
+		'layout'
 	];
 
     public function render ($field) {
-        $this->separation->
+        $this->layout->
             app('bundles/Registration/app/collections/activity_stream')->
             layout('Person/collections/activity_stream')->
             args('streams', [
