@@ -23,31 +23,38 @@
  * THE SOFTWARE.
  */
 namespace Opine;
+use MongoDate;
+use MongoId;
+use Exception;
+use Opine\Framework;
 
 class Person {
     private $db;
-    private $id;
     private $current = false;
     private $config;
+    private $cache;
+    private $fields;
 
     public function current () {
         return $this->current;
     }
 
-    public function __construct ($db, $config) {
+    public function __construct ($db, $config, $cache) {
         $this->db = $db;
         $this->config = $config;
-        if (isset($_SESSION['user']) && isset($_SESSION['user']['_id'])) {
-            $this->current = $_SESSION['user']['_id'];
-        }
+        $this->cache = $cache;
+        $this->fields = ['_id', 'email', 'first_name', 'last_name', 'groups', 'created_date', 'image', 'groups', 'api_token'];
     }
 
     public function available () {
-        if (isset($_SESSION['user']) && isset($_SESSION['user']['_id'])) {
-            $this->current = $_SESSION['user']['_id'];
+        if ($this->current != false) {
             return true;
         }
         return false;
+    }
+
+    public function get () {
+        return $this->current;
     }
 
     public function availableFindOrCreate ($attributes) {
@@ -84,33 +91,41 @@ class Person {
             $attributes['_id'] = $this->db->id($attributes['_id']);
         }
         $dbURI = 'users:' . (string)$attributes['_id'];
-        $attributes['created_date'] = new \MongoDate(strtotime('now'));
+        $attributes['created_date'] = new MongoDate(strtotime('now'));
+        $attributes['api_token'] = new MongoId();
         try {
             $this->db->documentStage($dbURI, $attributes)->upsert();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return 'Error: ' . $e->getMessage();
         }
-        $_SESSION['user'] = $attributes;
-        $this->current = (string)$attributes['_id'];
+        $this->establish($attributes);
+        $this->setCache($user);
         return true;
     }
 
-    public function findById ($id, $fields=[]) {
-        $check = $this->db->collection('users')->findOne(['_id' => $this->db->id($id)], $fields);
-        if (isset($check['_id'])) {
-            $this->current = $check['_id'];
-            return $check;
+    public function findById ($id, Array $fields=[]) {
+        $person = $this->db->collection('users')->findOne(['_id' => $this->db->id($id)], array_merge($this->fields, $fields));
+        if (isset($person['_id'])) {
+            $this->current = $person;
+            return $person;
         }
         return false;
     }
 
     public function findByEmail ($email, $fields=[]) {
-        $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))], $fields);
+        $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))], array_merge($this->fields, $fields));
         if (isset($check['_id'])) {
-            $this->current = $check['_id'];
+            $this->establish($check);
             return $check;
         }
         return false;
+    }
+
+    public function groups () {
+        if ($this->current === false) {
+            return false;
+        }
+        return $this->current['groups'];
     }
 
     public function groupJoin ($group) {
@@ -120,15 +135,24 @@ class Person {
         $this->operation(['$addToSet' => ['groups' => $group]]);
     }
 
-    private function operation ($operation) {
-        $this->db->collection('users')->update(['_id' => $this->db->id($this->current)], $operation);
-    }
-
     public function groupLeave ($group) {
         if ($this->current === false) {
             return false;
         }
         $this->operation(['$pull' => ['groups' => $group]]);
+    }
+
+    private function operation ($operation) {
+        $this->db->collection('users')->update(['_id' => $this->db->id($this->current['_id'])], $operation);
+    }
+
+    public function commit () {
+        if (!isset($this->current['_id'])) {
+            return false;
+        }
+        $user = $this->findById($this->current['_id']);
+        $this->setCache($user);
+        return true;
     }
 
     public function recordAdd ($dbURI, $type, $description, $uniqueType=false, $override=false) {
@@ -141,17 +165,17 @@ class Person {
             }
         }
         $this->operation(['$push' => ['records' => [
-            '_id' => new \MongoId(),
+            '_id' => new MongoId(),
             'dbURI' => $dbURI,
             'type' => $type,
             'description' => $description,
-            'created_date' => new \MongoDate(strtotime('now'))
+            'created_date' => new MongoDate(strtotime('now'))
         ]]]);
     }
 
     private function recordCheck ($type, &$foundDbURI=false) {
         $result = $this->db->collection('users')->findOne([
-            '_id' => $this->db->id($this->current),
+            '_id' => $this->db->id($this->current['_id']),
             'records.type' => $type
         ], [
             'records' => [
@@ -190,12 +214,12 @@ class Person {
 
     public function activityAdd($type, $description) {
         $activity = [
-            '_id' => new \MongoId(),
+            '_id' => new MongoId(),
             'type' => $type,
             'description' => $description,
-            'created_date' => new \MongoDate(strtotime('now'))
+            'created_date' => new MongoDate(strtotime('now'))
         ];
-        $activity['user_id'] = $this->current;
+        $activity['user_id'] = $this->db->id($this->current['_id']);
         $this->db->collection('activity_stream')->save($activity);
         return $this;
     }
@@ -230,13 +254,13 @@ class Person {
     public function addressAdd (array $address) {
         $this->addressValidate($address);
         $match = false;
-        $user = $this->db->collection('users')->findOne(['_id' => $this->db->id($this->current)], ['addresses']);
+        $user = $this->db->collection('users')->findOne(['_id' => $this->db->id($this->current['_id'])], ['addresses']);
         if (isset($user['addresses']) && is_array($user['addresses'])) {
             foreach ($user['addresses'] as $found) {
                 if (
-                        $this->prepMatch($found['city']) == $this->prepMatch($address['city']) && 
-                        $this->prepMatch($found['address']) == $this->prepMatch($address['address']) &&
-                        $this->prepMatch($found['zipcode']) == $this->prepMatch($address['zipcode'])
+                    $this->prepMatch($found['city']) == $this->prepMatch($address['city']) && 
+                    $this->prepMatch($found['address']) == $this->prepMatch($address['address']) &&
+                    $this->prepMatch($found['zipcode']) == $this->prepMatch($address['zipcode'])
                 ) {
                     $match = true;
                     break;
@@ -244,7 +268,7 @@ class Person {
             }
         }
         if ($match === false) {
-            $this->db->documentStage('users:' . (string)$this->current . ':addresses:' . (string)$this->db->id(), $address)->upsert();
+            $this->db->documentStage('users:' . (string)$this->current['_id'] . ':addresses:' . (string)$this->db->id(), $address)->upsert();
         }
         return $this;
     }
@@ -263,33 +287,27 @@ class Person {
         return true;
     }
 
-    public function sessionCheck (&$userId=false) {
-        if (isset($_SESSION['user']) && isset($_SESSION['user']['_id'])) {
-            $userId = $_SESSION['user']['_id'];
-            return true;
-        }
-        return false;
-    }
-
     private function findAndEstablishSession ($criteria) {
         $user = $this->db->collection('users')->findOne(
-            $criteria, [
-                '_id', 
-                'email', 
-                'first_name', 
-                'last_name', 
-                'groups', 
-                'created_date',
-                'image',
-                'groups'
-            ]);
+            $criteria, $this->fields);
         if (!isset($user['_id'])) {
             return false;
         }
-        $_SESSION['user'] = $user;
-        $this->db->collection('login_history')->save([
+
+        $user['api_token'] = new MongoId();
+        $this->establish($user);
+        $this->attributesSet(['api_token' => $user['api_token']]);
+        $this->setCache($user);
+
+        $this->db->collection('sessions')->save([
             'user_id' => $user['_id'],
-            'created_date' => new \MongoDate(strtotime('now'))
+            'api_token' => $user['api_token'],
+            'created_date' => new MongoDate(strtotime('now')),
+            'request_method' => isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : NULL,
+            'request_uri' => isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : NULL,
+            'referer' => (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) ? $_SERVER['HTTP_REFERER'] : NULL,
+            'remote_addr' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL,
+            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : NULL            
         ]);
         return true;
     }
@@ -315,6 +333,9 @@ class Person {
     }
 
     public function permission ($group) {
+        if ($this->current === false || !isset($this->current['groups'])) {
+            return false;
+        }
         if (is_array($group)) {
             foreach ($group as $subgroup) {
                 $result = $this->permission($subgroup);
@@ -324,10 +345,7 @@ class Person {
             }
             return false;
         }
-        if (!isset($_SESSION['user']) || !isset($_SESSION['user']['groups'])) {
-            return false;
-        }
-        $groups = array_map('strtolower', $_SESSION['user']['groups']);
+        $groups = array_map('strtolower', $this->current['groups']);
         if (in_array('superadmin', $groups)) {
             return true;
         }
@@ -338,17 +356,18 @@ class Person {
     }
 
     public function inGroupLike ($pattern) {
-        if (!isset($_SESSION['user']) || !isset($_SESSION['user']['groups'])) {
+        if ($this->current === false || !isset($this->current['groups'])) {
             return false;
         }
-        if (count(preg_grep($pattern, $_SESSION['user']['groups'])) > 0) {
+        if (count(preg_grep($pattern, $this->current['groups'])) > 0) {
             return true;
         }
         return false;
     }
 
     public function logout () {
-        $_SESSION['user'] = [];
+        $this->cache->delete('person-' . $this->current['api_token']);
+        $this->attributesSet(['api_token' => NULL]);
     }
 
     public function passwordHash ($password) {
@@ -368,11 +387,70 @@ class Person {
         //change password, remove token
     }
 
+    public function establish (Array $value) {
+        $this->current = $value;
+    }
 
+    public function findByApiToken ($apiToken, $noCache=false) {
+        $person = false;
+        if ($noCache === false) {
+            $person = $this->cache->get('person-' . $apiToken);
+            if ($person !== false) {
+                return json_decode($person);
+            }
+        }
+        $person = $this->db->collection('users')->findOne(['api_token' => $apiToken], $this->fields);
+        if (isset($person['_id'])) {
+            return $person;
+        }
+        return false;
+    }
 
+    private function setCache (Array $person, $ttl=false) {
+        $person['_id'] = (string)$person['_id'];
+        $person['api_token'] = (string)$person['api_token'];
+        Framework::keySet('user_id', $person['_id']);
+        Framework::keySet('api_token', $person['api_token']);
+        if (!is_int($ttl)) {
+            $ttl = 60 * 60 * 3;
+        }
+        $this->cache->set('person-' . $person['api_token'], json_encode($person), $ttl);
+    }
 
+    public static function apiTokenFromRequest () {
+        if (isset($_SERVER['api_token'])) {
+            return $_SERVER['api_token'];
+        }
+        if (isset($_GET['api_token'])) {
+            return $_GET['api_token'];
+        }
+        if (isset($_COOKIE['api_token'])) {
+            return $_COOKIE['api_token'];
+        }
+        return false;
+    }
 
+    public static function groupTokenFromRequest () {
+        if (isset($_SERVER['group_token'])) {
+            return $_SERVER['group_token'];
+        }
+        if (isset($_GET['group_token'])) {
+            return $_GET['group_token'];
+        }
+        if (isset($_COOKIE['group_token'])) {
+            return $_COOKIE['group_token'];
+        }
+        return false;
+    }
 
+    public function idGet () {
+        if ($this->current === false) {
+            return false;
+        }
+        if (isset($this->current['_id'])) {
+            return $this->current['_id'];
+        }
+    }
 }
 
-class AddressException extends \Exception {}
+class AddressException extends Exception {}
