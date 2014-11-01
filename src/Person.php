@@ -399,7 +399,7 @@ class Person {
                 return json_decode($person);
             }
         }
-        $person = $this->db->collection('users')->findOne(['api_token' => $apiToken], $this->fields);
+        $person = $this->db->collection('users')->findOne(['api_token' => $this->db->id($apiToken)], $this->fields);
         if (isset($person['_id'])) {
             return $person;
         }
