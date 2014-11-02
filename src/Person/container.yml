@@ -10,8 +10,6 @@ services:
     db:
         class:     'Opine\Mongo'
         arguments: ['@config', '@topic']
-    yamlSlow:
-        class:     'Symfony\Component\Yaml\Yaml'
     person:
         class:     'Opine\Person'
         arguments: ['@db', '@config']
