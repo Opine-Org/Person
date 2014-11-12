@@ -9,9 +9,8 @@ class Controller {
     }
 
     public function stream () {
-        $this->layout->app('bundles/Person/app/collections/activity_stream')->
+        $this->layout->app('Person/collections/activity_stream')->
             layout('Person/collections/activity_stream')->
-            template()->
             write();
     }
 }

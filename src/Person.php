@@ -43,7 +43,7 @@ class Person {
         $this->db = $db;
         $this->config = $config;
         $this->cache = $cache;
-        $this->fields = ['_id', 'email', 'first_name', 'last_name', 'groups', 'created_date', 'image', 'groups', 'api_token'];
+        $this->fields = ['_id', 'email', 'first_name', 'last_name', 'groups', 'created_date', 'image', 'api_token'];
     }
 
     public function available () {
@@ -99,7 +99,7 @@ class Person {
             return 'Error: ' . $e->getMessage();
         }
         $this->establish($attributes);
-        $this->setCache($user);
+        $this->setCache($attributes);
         return true;
     }
 
@@ -293,15 +293,20 @@ class Person {
         if (!isset($user['_id'])) {
             return false;
         }
-
         $user['api_token'] = new MongoId();
         $this->establish($user);
         $this->attributesSet(['api_token' => $user['api_token']]);
         $this->setCache($user);
+        $this->sessionSave();
+        
+        return true;
+    }
 
+    public function sessionSave ($provider='website') {
         $this->db->collection('sessions')->save([
-            'user_id' => $user['_id'],
-            'api_token' => $user['api_token'],
+            'provider' => $provider,
+            'user_id' => $this->current['_id'],
+            'api_token' => $this->current['api_token'],
             'created_date' => new MongoDate(strtotime('now')),
             'request_method' => isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : NULL,
             'request_uri' => isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : NULL,
@@ -309,7 +314,6 @@ class Person {
             'remote_addr' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL,
             'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : NULL            
         ]);
-        return true;
     }
 
     public function login ($identity, $password, $identityField='email', $criteria=false) {
@@ -450,6 +454,32 @@ class Person {
         if (isset($this->current['_id'])) {
             return $this->current['_id'];
         }
+    }
+
+    public function ssoProviderAdd ($provider, $payload) {
+        $result = $this->db->collection('users')->findOne([
+            '_id' => $this->db->id($this->current['_id']),
+            'providers.type' => $provider
+        ], [
+            'providers' => [
+                '$elemMatch' => [
+                    'type' => $provider
+                ]
+            ]
+        ]);
+        if (isset($result['providers']) && count($result['providers'] > 0) && isset($result['providers'][0]['_id'])) {
+            $dbURI = $result['providers'][0]['dbURI'];
+        } else {
+            $dbURI = 'users:' . (string)$this->current['_id'] . ':providers:' . (string)$this->db->id();
+        }
+
+        $this->operation(['$push' => ['providers' => [
+            '_id' => new MongoId(),
+            'dbURI' => $dbURI,
+            'type' => $provider,
+            'payload' => (array)$payload,
+            'created_date' => new MongoDate(strtotime('now'))
+        ]]]);
     }
 }
 
