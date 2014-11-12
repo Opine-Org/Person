@@ -10,10 +10,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -258,7 +258,7 @@ class Person {
         if (isset($user['addresses']) && is_array($user['addresses'])) {
             foreach ($user['addresses'] as $found) {
                 if (
-                    $this->prepMatch($found['city']) == $this->prepMatch($address['city']) && 
+                    $this->prepMatch($found['city']) == $this->prepMatch($address['city']) &&
                     $this->prepMatch($found['address']) == $this->prepMatch($address['address']) &&
                     $this->prepMatch($found['zipcode']) == $this->prepMatch($address['zipcode'])
                 ) {
@@ -298,7 +298,6 @@ class Person {
         $this->attributesSet(['api_token' => $user['api_token']]);
         $this->setCache($user);
         $this->sessionSave();
-        
         return true;
     }
 
@@ -312,7 +311,7 @@ class Person {
             'request_uri' => isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : NULL,
             'referer' => (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) ? $_SERVER['HTTP_REFERER'] : NULL,
             'remote_addr' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL,
-            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : NULL            
+            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : NULL
         ]);
     }
 
