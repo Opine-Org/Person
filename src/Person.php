@@ -121,6 +121,14 @@ class Person {
         return false;
     }
 
+    public function checkByEmail ($email, $fields=[]) {
+        $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))], array_merge($this->fields, $fields));
+        if (isset($check['_id'])) {
+            return true;
+        }
+        return false;
+    }
+
     public function groups () {
         if ($this->current === false) {
             return false;
@@ -395,6 +403,9 @@ class Person {
     }
 
     public function findByApiToken ($apiToken, $noCache=false) {
+        if (empty($apiToken)) {
+            return false;
+        }
         $person = false;
         if ($noCache === false) {
             $person = $this->cache->get('person-' . $apiToken);
