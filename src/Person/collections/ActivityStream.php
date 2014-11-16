@@ -1,12 +1,10 @@
 <?php
 /*
  * @version .1
- * @link https://raw.github.com/Opine-Org/Persons/master/src/Person/collections/activity_stream.php
- * @mode upgrade
  */
 namespace Person\Collection;
 
-class activity_stream {
+class ActivityStream {
     public $publishable = false;
     public $singular = 'activity';
     private $personFields = ['prefix', 'suffix', 'first_name', 'middle_name', 'last_name', 'email', 'phone'];

@@ -1,21 +1,10 @@
 services:
-    cache:
-        class:     'Opine\Cache'
-    topic:
-        class:     'Opine\Topic'
-        arguments: ['@container']
-    config:
-        class:     'Opine\Config'
-        arguments: ['%root%', '@cache']
-    db:
-        class:     'Opine\Mongo'
-        arguments: ['@config', '@topic']
     person:
         class:     'Opine\Person'
-        arguments: ['@db', '@config']
+        arguments: ['@db', '@config', '@cache']
     personRoute:
         class:     'Opine\Person\Route'
         arguments: ['@route']
     personController:
         class:     'Opine\Person\Controller'
-        arguments: ['@layout']
+        arguments: []

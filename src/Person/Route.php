@@ -9,7 +9,7 @@ class Route {
     }
 
     public function paths () {
-        $this->route->get('/Person/stream', 'personController@stream');
+        $this->route->get('/logout', 'personController@logout');
     }
 
     public static function location () {
