@@ -432,19 +432,6 @@ class Service {
         $this->cache->set('person-' . $person['api_token'], json_encode($person), $ttl);
     }
 
-    public static function apiTokenFromRequest () {
-        if (isset($_SERVER['api_token'])) {
-            return $_SERVER['api_token'];
-        }
-        if (isset($_GET['api_token'])) {
-            return $_GET['api_token'];
-        }
-        if (isset($_COOKIE['api_token'])) {
-            return $_COOKIE['api_token'];
-        }
-        return false;
-    }
-
     public static function groupTokenFromRequest () {
         if (isset($_SERVER['group_token'])) {
             return $_SERVER['group_token'];
