@@ -3,9 +3,7 @@
     "type": "library",
     "minimum-stability": "dev",
     "description": "Person / CRM Service",
-    "keywords": [
-        "CRM"
-    ],
+    "keywords": ["CRM"],
     "license": "MIT",
     "authors": [
         {
@@ -16,9 +14,12 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0",
-        "phpunit/phpunit": "3.7.32",
+        "php": ">=5.5.0",
+        "opine/interfaces": "dev-master"
+    },
+    "require-dev": {
         "opine/db": "dev-master",
+        "phpunit/phpunit": "3.7.32",
         "opine/config": "dev-master",
         "opine/container": "dev-master"
     },

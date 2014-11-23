@@ -23,24 +23,29 @@
  * THE SOFTWARE.
  */
 namespace Opine\Person;
+
 use MongoDate;
 use MongoId;
 use Exception;
+use Opine\Interfaces\DB as DBInterface;
+use Opine\Interfaces\Cache as CacheInterface;
 
 class Service {
     private $db;
     private $current = false;
     private $fields;
     private $salt;
+    private $cache;
 
     public function current () {
         return $this->current;
     }
 
-    public function __construct ($db, Array $config) {
+    public function __construct (DBInterface $db, CacheInterface $cache, Array $config) {
         $this->db = $db;
+        $this->cache = $cache;
         $this->salt = $config['salt'];
-        $this->fields = ['_id', 'email', 'first_name', 'last_name', 'groups', 'created_date', 'image', 'api_token'];
+        $this->fields = ['_id', 'email', 'first_name', 'last_name', 'groups', 'created_date', 'image', 'api_token', 'password'];
     }
 
     public function available () {
@@ -227,7 +232,7 @@ class Service {
             'created_date' => new MongoDate(strtotime('now'))
         ];
         $activity['user_id'] = $this->db->id($this->current['_id']);
-        $this->db->collection('activity_stream')->save($activity);
+        $this->db->collection('user_activities')->save($activity);
         return $this;
     }
 

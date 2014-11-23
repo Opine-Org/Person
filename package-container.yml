@@ -1,4 +1,4 @@
 services:
     person:
         class:     'Opine\Person\Service'
-        arguments: ['@db', 'config.auth']
+        arguments: ['@db', '@cache', 'config.auth']

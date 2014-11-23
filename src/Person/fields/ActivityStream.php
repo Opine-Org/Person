@@ -8,8 +8,8 @@ class ActivityStream {
 
     public function render ($field) {
         $this->layout->
-            app('Person/collections/activity_stream')->
-            layout('Person/collections/activity_stream')->
+            app('Person/collections/user_activities')->
+            layout('Person/collections/user_activities')->
             args('streams', [
                 'person_id' => $this->document['_id']
             ])->
