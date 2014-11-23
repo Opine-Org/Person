@@ -32,7 +32,8 @@
             "src/Person/collections",
             "src/Person/fields",
             "src/Person/managers",
-            "src/Person/controllers"
+            "src/Person/controllers",
+            "src/Person/Route.php"
         ]
     }
 }
