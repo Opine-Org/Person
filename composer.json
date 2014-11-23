@@ -1,8 +1,8 @@
 {
-    "name": "opine\/person",
+    "name": "opine/person",
     "type": "library",
     "minimum-stability": "dev",
-    "description": "Person \/ CRM class",
+    "description": "Person / CRM Service",
     "keywords": [
         "CRM"
     ],
@@ -11,20 +11,20 @@
         {
             "name": "Ryan Mahoney",
             "email": "ryan@virtuecenter.com",
-            "homepage": "http:\/\/opine-php.org",
+            "homepage": "http://opine-php.org",
             "role": "Developer"
         }
     ],
     "require": {
         "php": ">=5.4.0",
-        "phpunit\/phpunit": "3.7.32",
-        "opine\/db": "dev-master",
-        "opine\/config": "dev-master",
-        "opine\/container": "dev-master"
+        "phpunit/phpunit": "3.7.32",
+        "opine/db": "dev-master",
+        "opine/config": "dev-master",
+        "opine/container": "dev-master"
     },
     "autoload": {
         "psr-4": {
-            "Opine\\": "src\/"
+            "Opine\\Person\\": "src/"
         },
         "classmap": [
             "src/Person/forms",

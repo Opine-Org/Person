@@ -1,16 +1,19 @@
 <?php
-namespace Opine;
+namespace Opine\Person;
 
-class PersonTest extends \PHPUnit_Framework_TestCase {
+use PHPUnit_Framework_TestCase;
+use Opine\Container\Service as Container;
+use Opine\Config\Service as Config;
+
+class PersonTest extends PHPUnit_Framework_TestCase {
     private $person;
-    private $db;
 
     public function setup () {
-        date_default_timezone_set('UTC');
         $root = __DIR__ . '/../public';
-        $container = new Container($root, $root . '/../container.yml');
-        $this->person = $container->person;
-        $this->db = $container->db;
+        $config = new Config($root);
+        $config->cacheSet();
+        $container = new Container($root, $config, $root . '/../container.yml');
+        $this->person = $container->get('person');
     }
 
     public function testPersonNotAvailableInSession () {

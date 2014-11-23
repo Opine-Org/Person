@@ -22,27 +22,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-namespace Opine;
+namespace Opine\Person;
 use MongoDate;
 use MongoId;
 use Exception;
-use Opine\Framework;
 
-class Person {
+class Service {
     private $db;
     private $current = false;
-    private $config;
-    private $cache;
     private $fields;
+    private $salt;
 
     public function current () {
         return $this->current;
     }
 
-    public function __construct ($db, $config, $cache) {
+    public function __construct ($db, Array $config) {
         $this->db = $db;
-        $this->config = $config;
-        $this->cache = $cache;
+        $this->salt = $config['salt'];
         $this->fields = ['_id', 'email', 'first_name', 'last_name', 'groups', 'created_date', 'image', 'api_token'];
     }
 
@@ -72,8 +69,7 @@ class Person {
     }
 
     public function password ($password) {
-        $salt = $this->config->auth['salt'];
-        return sha1($salt . $password);
+        return sha1($this->salt . $password);
     }
 
     public function create ($attributes) {
@@ -94,7 +90,7 @@ class Person {
         $attributes['created_date'] = new MongoDate(strtotime('now'));
         $attributes['api_token'] = new MongoId();
         try {
-            $this->db->documentStage($dbURI, $attributes)->upsert();
+            $this->db->document($dbURI, $attributes)->upsert();
         } catch (Exception $e) {
             return 'Error: ' . $e->getMessage();
         }
@@ -131,6 +127,9 @@ class Person {
 
     public function groups () {
         if ($this->current === false) {
+            return false;
+        }
+        if (!isset($this->current['groups'])) {
             return false;
         }
         return $this->current['groups'];
@@ -276,7 +275,7 @@ class Person {
             }
         }
         if ($match === false) {
-            $this->db->documentStage('users:' . (string)$this->current['_id'] . ':addresses:' . (string)$this->db->id(), $address)->upsert();
+            $this->db->document('users:' . (string)$this->current['_id'] . ':addresses:' . (string)$this->db->id(), $address)->upsert();
         }
         return $this;
     }
@@ -382,8 +381,7 @@ class Person {
     }
 
     public function passwordHash ($password) {
-        $config = $this->config->auth;
-        return sha1($config['salt'] . $password);
+        return sha1($this->salt . $password);
     }
 
     public function passwordForgot ($email) {
@@ -423,8 +421,6 @@ class Person {
     private function setCache (Array $person, $ttl=false) {
         $person['_id'] = (string)$person['_id'];
         $person['api_token'] = (string)$person['api_token'];
-        Framework::keySet('user_id', $person['_id']);
-        Framework::keySet('api_token', $person['api_token']);
         if (!is_int($ttl)) {
             $ttl = 60 * 60 * 3;
         }

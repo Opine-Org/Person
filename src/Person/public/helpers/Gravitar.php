@@ -10,7 +10,7 @@ return function ($arguments, $options) {
         $options['d'] = 'mm';
     }
     if (!isset($options['r'])) {
-        $options['g'] = 'mm';
+        $options['r'] = 'mm';
     }
     return 'https://www.gravatar.com/avatar/' . md5(strtolower(trim($options['email']))) . '?s=' . $options['s'] . '&d=' . $options['d'] . '&r=' . $options['r'];
 };
