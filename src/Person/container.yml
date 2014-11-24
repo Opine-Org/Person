@@ -1,9 +1,9 @@
 services:
     person:
-        class:     'Opine\Person'
-        arguments: ['@db', '@config', '@cache']
+        class:     Opine\Person\Service
+        arguments: ['@db', '@cache', 'config.auth']
     personRoute:
-        class:     'Opine\Person\Route'
+        class:     Opine\Person\Route
         arguments: ['@route']
     personController:
         class:     'Opine\Person\Controller'

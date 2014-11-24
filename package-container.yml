@@ -5,3 +5,6 @@ services:
     personRoute:
         class:     Opine\Person\Route
         arguments: ['@route']
+    personController:
+        class:     'Opine\Person\Controller'
+        arguments: []

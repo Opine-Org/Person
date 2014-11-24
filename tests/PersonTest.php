@@ -13,7 +13,7 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $root = __DIR__ . '/../public';
         $config = new Config($root);
         $config->cacheSet();
-        $container = new Container($root, $config, $root . '/../container.yml');
+        $container = Container::instance($root, $config, $root . '/../container.yml');
         $this->person = $container->get('person');
     }
 
