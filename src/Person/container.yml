@@ -1,10 +1,12 @@
 services:
     person:
-        class:     Opine\Person\Service
-        arguments: ['@db', '@cache', 'config.auth']
+        class:      Opine\Person\Service
+        arguments:  ['@db', '@cache', 'config.auth']
     personRoute:
-        class:     Opine\Person\Route
-        arguments: ['@route']
+        class:      Opine\Person\Route
+        arguments:  ['@route']
     personController:
-        class:     'Opine\Person\Controller'
-        arguments: []
+        class:      'Opine\Person\Controller'
+        arguments:  []
+    helperGravitar:
+        class:      'Helper\Person\Gravitar'
