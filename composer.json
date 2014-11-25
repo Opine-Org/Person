@@ -28,13 +28,12 @@
             "Opine\\Person\\": "src/"
         },
         "classmap": [
-            "src/Person/forms",
-            "src/Person/collections",
-            "src/Person/fields",
-            "src/Person/managers",
-            "src/Person/controllers",
-            "src/Person/Route.php",
-            "src/Person/helpers"
+            "src/Person/config/forms",
+            "src/Person/config/collections",
+            "src/Person/config/managers",
+            "src/Person/app/controllers",
+            "src/Person/app/Route.php",
+            "src/Person/app/helpers"
         ]
     }
 }
