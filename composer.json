@@ -32,7 +32,6 @@
             "src/Person/config/collections",
             "src/Person/config/managers",
             "src/Person/app/controllers",
-            "src/Person/app/Route.php",
             "src/Person/app/helpers"
         ]
     }
