@@ -1,12 +1,14 @@
 <?php
 namespace Person\Field;
 
-class ActivityStream {
-	public $services = [
-		'layout'
-	];
+class ActivityStream
+{
+    public $services = [
+        'layout',
+    ];
 
-    public function render ($field) {
+    public function render($field)
+    {
         $this->layout->
             config('Person/collections/user_activities')->
             container('Person/collections/user_activities')->

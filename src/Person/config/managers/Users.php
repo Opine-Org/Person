@@ -7,7 +7,8 @@
  */
 namespace Person\Manager;
 
-class Users {
+class Users
+{
     public $field = false;
     public $collection = 'Users';
     public $title = 'People';
@@ -23,10 +24,11 @@ class Users {
     public $function = 'ManagerSaved';
     public $storage = [
         'collection' => 'users',
-        'key' => '_id'
+        'key' => '_id',
     ];
-    
-    function prefixField () {
+
+    public function prefixField()
+    {
         return [
             'name'        => 'prefix',
             'required'    => false,
@@ -34,7 +36,8 @@ class Users {
         ];
     }
 
-    function first_nameField () {
+    public function first_nameField()
+    {
         return [
             'name'        => 'first_name',
             'required'    => true,
@@ -42,7 +45,8 @@ class Users {
         ];
     }
 
-    public function middle_nameField () {
+    public function middle_nameField()
+    {
         return [
             'name'    => 'middle_name',
             'required'  => false,
@@ -50,7 +54,8 @@ class Users {
         ];
     }
 
-    public function last_nameField () {
+    public function last_nameField()
+    {
         return [
             'name'    => 'last_name',
             'required'  => true,
@@ -58,7 +63,8 @@ class Users {
         ];
     }
 
-    public function suffixField () {
+    public function suffixField()
+    {
         return [
             'name'    => 'suffix',
             'required'  => false,
@@ -66,7 +72,8 @@ class Users {
         ];
     }
 
-    public function emailField () {
+    public function emailField()
+    {
         return [
             'name'    => 'email',
             'label'   => 'Email',
@@ -75,7 +82,8 @@ class Users {
         ];
     }
 
-    public function phoneField () {
+    public function phoneField()
+    {
         return [
             'name'    => 'phone',
             'label'   => 'Phone',
@@ -84,14 +92,16 @@ class Users {
         ];
     }
 
-    public function homepageField () {
+    public function homepageField()
+    {
         return [
             'display' => 'InputText',
             'name' => 'homepage'
         ];
     }
 
-    public function titleField () {
+    public function titleField()
+    {
         return [
             'name'    => 'title',
             'required'  => false,
@@ -99,7 +109,8 @@ class Users {
         ];
     }
 
-    public function password2Field () {
+    public function password2Field()
+    {
         return [
             'name'    => 'password2',
             'required'  => false,
@@ -107,7 +118,8 @@ class Users {
         ];
     }
 
-    public function organizationField () {
+    public function organizationField()
+    {
         return [
             'name'    => 'organization',
             'label'   => 'Organization',
@@ -121,7 +133,8 @@ class Users {
         ];
     }
 
-    public function imageField () {
+    public function imageField()
+    {
         return [
             'name' => 'image',
             'label' => 'List View',
@@ -129,7 +142,8 @@ class Users {
        ];
     }
 
-    public function classification_tagsField () {
+    public function classification_tagsField()
+    {
         return [
             'name' => 'classification_tags',
             'label' => 'Classification',
@@ -138,6 +152,7 @@ class Users {
                 if (is_array($data)) {
                     return $data;
                 }
+
                 return $this->field->csvToArray($data);
             },
             'display' => 'InputToTags',
@@ -148,7 +163,8 @@ class Users {
         ];
     }
 
-    public function point_personField () {
+    public function point_personField()
+    {
         return [
             'name'    => 'point_person',
             'label'   => 'Person',
@@ -162,49 +178,53 @@ class Users {
         ];
     }
 
-    public function unsuscribeField () {
+    public function unsuscribeField()
+    {
         return [
             'name' => 'unsuscribe',
             'label' => 'Unsuscribed',
             'required' => false,
             'options' => [
                 't' => 'Yes',
-                'f' => 'No'
+                'f' => 'No',
             ],
             'display' => 'InputSlider',
             'default' => 'f'
         ];
     }
 
-    public function permanent_bounceField () {
+    public function permanent_bounceField()
+    {
         return [
             'name' => 'permanent_bounce',
             'label' => 'Email Permanent Bounce',
             'required' => false,
             'options' => [
                 't' => 'Yes',
-                'f' => 'No'
+                'f' => 'No',
             ],
             'display' => 'InputSlider',
             'default' => 'f'
         ];
     }
 
-    public function email_complaintField () {
+    public function email_complaintField()
+    {
         return [
             'name' => 'email_complaint',
             'label' => 'Complained About Spam',
             'required' => false,
             'options' => [
                 't' => 'Yes',
-                'f' => 'No'
+                'f' => 'No',
             ],
             'display' => 'InputSlider',
             'default' => 'f'
         ];
     }
 
-    function groupsField () {
+    public function groupsField()
+    {
         return array(
             'name'      => 'groups',
             'required'  => false,
@@ -213,11 +233,12 @@ class Users {
             },
             'display'   => 'InputToTags',
             'controlled' => true,
-            'multiple' => true
+            'multiple' => true,
         );
     }
 
-    public function users_addressField() {
+    public function users_addressField()
+    {
         return [
             'name' => 'address',
             'label' => 'Address',
@@ -227,7 +248,8 @@ class Users {
         ];
     }
 
-    public function users_phonesField() {
+    public function users_phonesField()
+    {
         return [
             'name' => 'phones',
             'label' => 'Phone Number',
@@ -236,8 +258,9 @@ class Users {
             'manager'   => 'users_phones'
         ];
     }
-    
-    public function users_recordsField() {
+
+    public function users_recordsField()
+    {
         return [
             'name' => 'records',
             'label' => 'Records',
@@ -246,8 +269,9 @@ class Users {
             'manager'   => 'users_records'
         ];
     }
-    
-     public function users_activityField() {
+
+    public function users_activityField()
+    {
         return [
             'name' => 'activity',
             'label' => 'Activity Stream',
@@ -257,7 +281,8 @@ class Users {
         ];
     }
 
-    public function tablePartial () {
+    public function tablePartial()
+    {
         $partial = <<<'HBS'
             <div class="top-container">
                 {{#CollectionHeader}}
@@ -267,7 +292,7 @@ class Users {
                 {{#if users}}
                     {{#CollectionPagination}}
                     {{#CollectionButtons}}
-                
+
                     <table class="ui large table segment manager">
                         <thead>
                             <tr>
@@ -296,10 +321,12 @@ class Users {
                 {{/if}}
            </div>
 HBS;
+
         return $partial;
     }
 
-    public function formPartial () {
+    public function formPartial()
+    {
         $partial = <<<'HBS'
             {{#Form}}
                 <div class="top-container">
@@ -323,8 +350,8 @@ HBS;
                             {{#FieldEmbedded field="address_sub" manager="users_address"}}
                             {{#FieldEmbedded field="phones_sub" manager="users_phones"}}
                             {{{id}}}
-                        {{/DocumentFormLeft}}                 
-                        
+                        {{/DocumentFormLeft}}
+
                         {{#DocumentFormRight}}
                             {{#DocumentButton}}
                             {{#FieldFull password2 Password}}
@@ -337,28 +364,29 @@ HBS;
                             {{#FieldLeft permanent_bounce}}
                             {{#FieldLeft email_complaint}}
                         {{/DocumentFormRight}}
-                    </div> 
+                    </div>
                     <div class="ui tab" data-tab="Records">
                          {{#DocumentFormLeft}}
                             {{#FieldEmbedded field="records_sub" manager="users_records"}}
                         {{/DocumentFormLeft}}
-                        
+
                         {{#DocumentFormRight}}
                             {{#DocumentButton}}{{/DocumentButton}}
                         {{/DocumentFormRight}}
-                    </div> 
+                    </div>
                     <div class="ui tab" data-tab="Activity Stream">
                          {{#DocumentFormLeft}}
                             {{#FieldEmbedded field="activity_sub" manager="users_activity"}}
                         {{/DocumentFormLeft}}
-                        
+
                         {{#DocumentFormRight}}
                             {{#DocumentButton}}{{/DocumentButton}}
                         {{/DocumentFormRight}}
-                    </div>        
+                    </div>
                 </div>
             </form>
 HBS;
+
         return $partial;
     }
 }

@@ -30,36 +30,43 @@ use Exception;
 use Opine\Interfaces\DB as DBInterface;
 use Opine\Interfaces\Cache as CacheInterface;
 
-class Service {
+class Service
+{
     private $db;
     private $current = false;
     private $fields;
     private $salt;
     private $cache;
 
-    public function current () {
+    public function current()
+    {
         return $this->current;
     }
 
-    public function __construct (DBInterface $db, CacheInterface $cache, Array $config) {
+    public function __construct(DBInterface $db, CacheInterface $cache, Array $config)
+    {
         $this->db = $db;
         $this->cache = $cache;
         $this->salt = $config['salt'];
         $this->fields = ['_id', 'email', 'first_name', 'last_name', 'groups', 'created_date', 'image', 'api_token', 'password'];
     }
 
-    public function available () {
+    public function available()
+    {
         if ($this->current != false) {
             return true;
         }
+
         return false;
     }
 
-    public function get () {
+    public function get()
+    {
         return $this->current;
     }
 
-    public function availableFindOrCreate ($attributes) {
+    public function availableFindOrCreate($attributes)
+    {
         $available = $this->available();
         if ($available === true) {
             return true;
@@ -70,14 +77,17 @@ class Service {
         if ($this->findByEmail(strtolower($attributes['email'])) !== false) {
             return true;
         }
+
         return $this->create($attributes);
     }
 
-    public function password ($password) {
-        return sha1($this->salt . $password);
+    public function password($password)
+    {
+        return sha1($this->salt.$password);
     }
 
-    public function create ($attributes) {
+    public function create($attributes)
+    {
         if (isset($attributes['password'])) {
             $attributes['password'] = $this->password($attributes['password']);
         } else {
@@ -91,83 +101,100 @@ class Service {
         } else {
             $attributes['_id'] = $this->db->id($attributes['_id']);
         }
-        $dbURI = 'users:' . (string)$attributes['_id'];
+        $dbURI = 'users:'.(string) $attributes['_id'];
         $attributes['created_date'] = new MongoDate(strtotime('now'));
         $attributes['api_token'] = new MongoId();
         try {
             $this->db->document($dbURI, $attributes)->upsert();
         } catch (Exception $e) {
-            return 'Error: ' . $e->getMessage();
+            return 'Error: '.$e->getMessage();
         }
         $this->establish($attributes);
         $this->setCache($attributes);
+
         return true;
     }
 
-    public function findById ($id, Array $fields=[]) {
+    public function findById($id, Array $fields = [])
+    {
         $person = $this->db->collection('users')->findOne(['_id' => $this->db->id($id)], array_merge($this->fields, $fields));
         if (isset($person['_id'])) {
             $this->current = $person;
+
             return $person;
         }
+
         return false;
     }
 
-    public function findByEmail ($email, $fields=[]) {
+    public function findByEmail($email, $fields = [])
+    {
         $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))], array_merge($this->fields, $fields));
         if (isset($check['_id'])) {
             $this->establish($check);
+
             return $check;
         }
+
         return false;
     }
 
-    public function checkByEmail ($email, $fields=[]) {
+    public function checkByEmail($email, $fields = [])
+    {
         $check = $this->db->collection('users')->findOne(['email' => strtolower(trim($email))], array_merge($this->fields, $fields));
         if (isset($check['_id'])) {
             return true;
         }
+
         return false;
     }
 
-    public function groups () {
+    public function groups()
+    {
         if ($this->current === false) {
             return false;
         }
         if (!isset($this->current['groups'])) {
             return false;
         }
+
         return $this->current['groups'];
     }
 
-    public function groupJoin ($group) {
+    public function groupJoin($group)
+    {
         if ($this->current === false) {
             return false;
         }
         $this->operation(['$addToSet' => ['groups' => $group]]);
     }
 
-    public function groupLeave ($group) {
+    public function groupLeave($group)
+    {
         if ($this->current === false) {
             return false;
         }
         $this->operation(['$pull' => ['groups' => $group]]);
     }
 
-    private function operation ($operation) {
+    private function operation($operation)
+    {
         $this->db->collection('users')->update(['_id' => $this->db->id($this->current['_id'])], $operation);
     }
 
-    public function commit () {
+    public function commit()
+    {
         if (!isset($this->current['_id'])) {
             return false;
         }
         $user = $this->findById($this->current['_id']);
         $this->setCache($user);
+
         return true;
     }
 
-    public function recordAdd ($dbURI, $type, $description, $uniqueType=false, $override=false) {
+    public function recordAdd($dbURI, $type, $description, $uniqueType = false, $override = false)
+    {
         $foundDbURI = false;
         if ($uniqueType == true && $this->recordCheck($type, $foundDbURI) === true) {
             if ($override === true) {
@@ -181,89 +208,107 @@ class Service {
             'dbURI' => $dbURI,
             'type' => $type,
             'description' => $description,
-            'created_date' => new MongoDate(strtotime('now'))
+            'created_date' => new MongoDate(strtotime('now')),
         ]]]);
     }
 
-    private function recordCheck ($type, &$foundDbURI=false) {
+    private function recordCheck($type, &$foundDbURI = false)
+    {
         $result = $this->db->collection('users')->findOne([
             '_id' => $this->db->id($this->current['_id']),
-            'records.type' => $type
+            'records.type' => $type,
         ], [
             'records' => [
                 '$elemMatch' => [
-                    'type' => $type
-                ]
+                    'type' => $type,
+                ],
             ]
         ]);
         if (isset($result['records']) && count($result['records'] > 0) && isset($result['records'][0]['_id'])) {
             $foundDbURI = $result['records'][0]['dbURI'];
+
             return true;
         }
+
         return false;
     }
 
-    public function attributesSet (Array $attributes) {
+    public function attributesSet(Array $attributes)
+    {
         $this->operation([
-            '$set' => $attributes
+            '$set' => $attributes,
         ]);
+
         return $this;
     }
 
-    public function passwordSet($password) {
+    public function passwordSet($password)
+    {
         $this->attributesSet([
-            'password' => $this->password($password)
+            'password' => $this->password($password),
         ]);
+
         return $this;
     }
 
-    public function photoSet(Array $image) {
+    public function photoSet(Array $image)
+    {
         $this->attributesSet([
-            'image' => $image
+            'image' => $image,
         ]);
+
         return $this;
     }
 
-    public function activityAdd($type, $description) {
+    public function activityAdd($type, $description)
+    {
         $activity = [
             '_id' => new MongoId(),
             'type' => $type,
             'description' => $description,
-            'created_date' => new MongoDate(strtotime('now'))
+            'created_date' => new MongoDate(strtotime('now')),
         ];
         $activity['user_id'] = $this->db->id($this->current['_id']);
         $this->db->collection('user_activities')->save($activity);
+
         return $this;
     }
 
-    public function classify ($tag) {
+    public function classify($tag)
+    {
         if ($this->current === false) {
             return false;
         }
         $this->operation(['$addToSet' => ['classification_tags' => $tag]]);
+
         return $this;
     }
 
-    public function declassify ($tag) {
+    public function declassify($tag)
+    {
         if ($this->current === false) {
             return false;
         }
         $this->operation(['$pull' => ['classification_tags' => $tag]]);
+
         return $this;
     }
 
-    public function addressBillingSet (array $address) {
+    public function addressBillingSet(array $address)
+    {
         $this->addressValidate($address);
         $this->operation([
             '$set' => [
-                'billing_address' => $address
-            ]
+                'billing_address' => $address,
+            ],
         ]);
         $this->addressAdd($address);
+
         return $this;
     }
 
-    public function addressAdd (array $address) {
+    public function addressAdd(array $address)
+    {
         $this->addressValidate($address);
         $match = false;
         $user = $this->db->collection('users')->findOne(['_id' => $this->db->id($this->current['_id'])], ['addresses']);
@@ -280,26 +325,31 @@ class Service {
             }
         }
         if ($match === false) {
-            $this->db->document('users:' . (string)$this->current['_id'] . ':addresses:' . (string)$this->db->id(), $address)->upsert();
+            $this->db->document('users:'.(string) $this->current['_id'].':addresses:'.(string) $this->db->id(), $address)->upsert();
         }
+
         return $this;
     }
 
-    private function prepMatch ($string) {
+    private function prepMatch($string)
+    {
         return substr(strtolower(str_replace(['    ', '   ', '  '], ' ', trim($string))), 0, 5);
     }
 
-    private function addressValidate (array $address) {
+    private function addressValidate(array $address)
+    {
         $fields = ['address', 'city', 'state', 'zipcode'];
         foreach ($fields as $field) {
             if (!isset($address[$field]) || empty($address[$field])) {
-                throw new AddressException('Address missing: ' . $field);
+                throw new AddressException('Address missing: '.$field);
             }
         }
+
         return true;
     }
 
-    private function findAndEstablishSession ($criteria) {
+    private function findAndEstablishSession($criteria)
+    {
         $user = $this->db->collection('users')->findOne(
             $criteria, $this->fields);
         if (!isset($user['_id'])) {
@@ -310,44 +360,51 @@ class Service {
         $this->attributesSet(['api_token' => $user['api_token']]);
         $this->setCache($user);
         $this->sessionSave();
+
         return true;
     }
 
-    public function sessionSave ($provider='website') {
+    public function sessionSave($provider = 'website')
+    {
         $this->db->collection('sessions')->save([
             'provider' => $provider,
             'user_id' => $this->current['_id'],
             'api_token' => $this->current['api_token'],
             'created_date' => new MongoDate(strtotime('now')),
-            'request_method' => isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : NULL,
-            'request_uri' => isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : NULL,
-            'referer' => (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) ? $_SERVER['HTTP_REFERER'] : NULL,
-            'remote_addr' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL,
-            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : NULL
+            'request_method' => isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : null,
+            'request_uri' => isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : null,
+            'referer' => (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) ? $_SERVER['HTTP_REFERER'] : null,
+            'remote_addr' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : null,
+            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null,
         ]);
     }
 
-    public function login ($identity, $password, $identityField='email', $criteria=false) {
+    public function login($identity, $password, $identityField = 'email', $criteria = false)
+    {
         if ($identityField == 'email') {
             $identity = trim(strtolower($identity));
         }
         if ($criteria === false) {
             $criteria = [
                 $identityField => $identity,
-                'password' => $this->passwordHash($password)
+                'password' => $this->passwordHash($password),
             ];
         }
+
         return $this->findAndEstablishSession($criteria);
     }
 
-    public function loginByUserId ($userId) {
+    public function loginByUserId($userId)
+    {
         $criteria = [
-            '_id' => $this->db->id($userId)
+            '_id' => $this->db->id($userId),
         ];
+
         return $this->findAndEstablishSession($criteria);
     }
 
-    public function permission ($group) {
+    public function permission($group)
+    {
         if ($this->current === false || !isset($this->current['groups'])) {
             return false;
         }
@@ -358,6 +415,7 @@ class Service {
                     return true;
                 }
             }
+
             return false;
         }
         $groups = array_map('strtolower', $this->current['groups']);
@@ -367,51 +425,60 @@ class Service {
         if (in_array(strtolower($group), $groups)) {
             return true;
         }
+
         return false;
     }
 
-    public function inGroupLike ($pattern) {
+    public function inGroupLike($pattern)
+    {
         if ($this->current === false || !isset($this->current['groups'])) {
             return false;
         }
         if (count(preg_grep($pattern, $this->current['groups'])) > 0) {
             return true;
         }
+
         return false;
     }
 
-    public function logout () {
-        $this->cache->delete('person-' . $this->current['api_token']);
-        $this->attributesSet(['api_token' => NULL]);
+    public function logout()
+    {
+        $this->cache->delete('person-'.$this->current['api_token']);
+        $this->attributesSet(['api_token' => null]);
     }
 
-    public function passwordHash ($password) {
-        return sha1($this->salt . $password);
+    public function passwordHash($password)
+    {
+        return sha1($this->salt.$password);
     }
 
-    public function passwordForgot ($email) {
+    public function passwordForgot($email)
+    {
         //validate user
         //enforce rate limit
         //generate token
         //email via topic
     }
 
-    public function passwordChange ($id, $token, $password) {
+    public function passwordChange($id, $token, $password)
+    {
         //validate token
         //change password, remove token
     }
 
-    public function establish (Array $value) {
+    public function establish(Array $value)
+    {
         $this->current = $value;
     }
 
-    public function findByApiToken ($apiToken, $noCache=false) {
+    public function findByApiToken($apiToken, $noCache = false)
+    {
         if (empty($apiToken)) {
             return false;
         }
         $person = false;
         if ($noCache === false) {
-            $person = $this->cache->get('person-' . $apiToken);
+            $person = $this->cache->get('person-'.$apiToken);
             if ($person !== false) {
                 return json_decode($person);
             }
@@ -420,19 +487,22 @@ class Service {
         if (isset($person['_id'])) {
             return $person;
         }
+
         return false;
     }
 
-    private function setCache (Array $person, $ttl=false) {
-        $person['_id'] = (string)$person['_id'];
-        $person['api_token'] = (string)$person['api_token'];
+    private function setCache(Array $person, $ttl = false)
+    {
+        $person['_id'] = (string) $person['_id'];
+        $person['api_token'] = (string) $person['api_token'];
         if (!is_int($ttl)) {
             $ttl = 60 * 60 * 3;
         }
-        $this->cache->set('person-' . $person['api_token'], json_encode($person), $ttl);
+        $this->cache->set('person-'.$person['api_token'], json_encode($person), $ttl);
     }
 
-    public static function groupTokenFromRequest () {
+    public static function groupTokenFromRequest()
+    {
         if (isset($_SERVER['group_token'])) {
             return $_SERVER['group_token'];
         }
@@ -442,10 +512,12 @@ class Service {
         if (isset($_COOKIE['group_token'])) {
             return $_COOKIE['group_token'];
         }
+
         return false;
     }
 
-    public function idGet () {
+    public function idGet()
+    {
         if ($this->current === false) {
             return false;
         }
@@ -454,31 +526,34 @@ class Service {
         }
     }
 
-    public function ssoProviderAdd ($provider, $payload) {
+    public function ssoProviderAdd($provider, $payload)
+    {
         $result = $this->db->collection('users')->findOne([
             '_id' => $this->db->id($this->current['_id']),
-            'providers.type' => $provider
+            'providers.type' => $provider,
         ], [
             'providers' => [
                 '$elemMatch' => [
-                    'type' => $provider
-                ]
+                    'type' => $provider,
+                ],
             ]
         ]);
         if (isset($result['providers']) && count($result['providers'] > 0) && isset($result['providers'][0]['_id'])) {
             $dbURI = $result['providers'][0]['dbURI'];
         } else {
-            $dbURI = 'users:' . (string)$this->current['_id'] . ':providers:' . (string)$this->db->id();
+            $dbURI = 'users:'.(string) $this->current['_id'].':providers:'.(string) $this->db->id();
         }
 
         $this->operation(['$push' => ['providers' => [
             '_id' => new MongoId(),
             'dbURI' => $dbURI,
             'type' => $provider,
-            'payload' => (array)$payload,
-            'created_date' => new MongoDate(strtotime('now'))
+            'payload' => (array) $payload,
+            'created_date' => new MongoDate(strtotime('now')),
         ]]]);
     }
 }
 
-class AddressException extends Exception {}
+class AddressException extends Exception
+{
+}

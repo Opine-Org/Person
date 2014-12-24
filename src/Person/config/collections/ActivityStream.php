@@ -4,12 +4,14 @@
  */
 namespace Person\Collection;
 
-class ActivityStream {
+class ActivityStream
+{
     public $publishable = false;
     public $singular = 'activity';
     private $personFields = ['prefix', 'suffix', 'first_name', 'middle_name', 'last_name', 'email', 'phone'];
 
-    public function chunk (&$rows) {
+    public function chunk(&$rows)
+    {
         $users = [];
         $details = [];
         foreach ($rows as $row) {
@@ -21,7 +23,7 @@ class ActivityStream {
             $this->personFields
         ), '_id', $this->personFields, true);
         foreach ($rows as &$row) {
-            $key = (string)$row['user_id'];
+            $key = (string) $row['user_id'];
             if (!isset($details[$key])) {
                 continue;
             }

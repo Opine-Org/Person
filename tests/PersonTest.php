@@ -6,58 +6,66 @@ use Opine\Container\Service as Container;
 use Opine\Config\Service as Config;
 use MongoId;
 
-class PersonTest extends PHPUnit_Framework_TestCase {
+class PersonTest extends PHPUnit_Framework_TestCase
+{
     private $person;
 
-    public function setup () {
-        $root = __DIR__ . '/../public';
+    public function setup()
+    {
+        $root = __DIR__.'/../public';
         $config = new Config($root);
         $config->cacheSet();
-        $container = Container::instance($root, $config, $root . '/../config/containers/test-container.yml');
+        $container = Container::instance($root, $config, $root.'/../config/containers/test-container.yml');
         $this->person = $container->get('person');
     }
 
-    public function testPersonNotAvailableInSession () {
+    public function testPersonNotAvailableInSession()
+    {
         $result = $this->person->available();
         $this->assertFalse($result);
     }
 
-    private function personCreate ($id) {
+    private function personCreate($id)
+    {
         $this->person->create([
             '_id' => $id,
             'email' => 'test@unit.com',
-            'password' => 'secret'
+            'password' => 'secret',
         ]);
     }
 
-    public function testPersonCreate () {
+    public function testPersonCreate()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $same = false;
-        if ((string)$id == (string)$this->person->current()['_id']) {
+        if ((string) $id == (string) $this->person->current()['_id']) {
             $same = true;
         }
         $this->assertTrue($same);
     }
 
-    public function testPersonNotFoundById () {
+    public function testPersonNotFoundById()
+    {
         $id = new MongoId();
         $result = $this->person->findById($id);
         $this->assertFalse($result);
     }
 
-    public function testPersonFoundById () {
+    public function testPersonFoundById()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $person = $this->person->findById($id);
         $found = false;
-        if ((string)$id == (string)$person['_id']) {
+        if ((string) $id == (string) $person['_id']) {
             $found = true;
         }
         $this->assertTrue($found);
     }
 
-    public function testPersonPasswordCorrect () {
+    public function testPersonPasswordCorrect()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $password = $this->person->password('secret');
@@ -69,14 +77,16 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($matched);
     }
 
-    public function testPersonNotFoundByEmail () {
+    public function testPersonNotFoundByEmail()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $person = $this->person->findByEmail('nomatch@unit.com');
         $this->assertFalse($person);
     }
 
-    public function testPersonFindByEmail () {
+    public function testPersonFindByEmail()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $email = 'test@unit.com';
@@ -88,7 +98,8 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($same);
     }
 
-    public function testPersonGroupJoin () {
+    public function testPersonGroupJoin()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $group = 'Testing';
@@ -101,7 +112,8 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($found);
     }
 
-    public function testPersonGroupLeave () {
+    public function testPersonGroupLeave()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $group = 'Testing';
@@ -115,7 +127,8 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertFalse($found);
     }
 
-    public function testPersonGroupJoinUnique () {
+    public function testPersonGroupJoinUnique()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $group = 'Testing';
@@ -130,10 +143,11 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($matched);
     }
 
-    public function testPersonRecordAdd () {
+    public function testPersonRecordAdd()
+    {
         $id = new MongoId();
         $recordId = new MongoId();
-        $dbURI = 'membership:' . (string)$recordId;
+        $dbURI = 'membership:'.(string) $recordId;
         $this->personCreate($id);
         $this->person->recordAdd($dbURI, 'membership', 'Memership Form');
         $person = $this->person->findById($id, ['records']);
@@ -146,12 +160,13 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($found);
     }
 
-    public function testPersonRecordAddUnique () {
+    public function testPersonRecordAddUnique()
+    {
         $id = new MongoId();
         $recordId = new MongoId();
-        $dbURI = 'membership:' . (string)$recordId;
+        $dbURI = 'membership:'.(string) $recordId;
         $this->personCreate($id);
-        for ($i=0; $i < 3; $i++) {
+        for ($i = 0; $i < 3; $i++) {
             $this->person->recordAdd($dbURI, 'membership', 'Memership Form', true);
         }
         $person = $this->person->findById($id, ['records']);
@@ -168,11 +183,12 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($single);
     }
 
-    public function testPersonRecordAddUniqueOverride () {
+    public function testPersonRecordAddUniqueOverride()
+    {
         $id = new MongoId();
         $this->personCreate($id);
-        $this->person->recordAdd('membership:' . (string)new MongoId(), 'membership', 'Memership Form', true);
-        $this->person->recordAdd('membership:' . (string)new MongoId(), 'membership', 'Memership Form 2', true, true);
+        $this->person->recordAdd('membership:'.(string) new MongoId(), 'membership', 'Memership Form', true);
+        $this->person->recordAdd('membership:'.(string) new MongoId(), 'membership', 'Memership Form 2', true, true);
         $person = $this->person->findById($id, ['records']);
         $count = 0;
         foreach ($person['records'] as $record) {
@@ -192,11 +208,12 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($replaced);
     }
 
-    public function testPersonSetAttribute () {
+    public function testPersonSetAttribute()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $this->person->attributesSet([
-            'first_name' => 'Tom'
+            'first_name' => 'Tom',
         ]);
         $person = $this->person->findById($id);
         $matched = false;
@@ -206,7 +223,8 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($matched);
     }
 
-    public function testPersonSetPhoto () {
+    public function testPersonSetPhoto()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $image = [
@@ -216,7 +234,7 @@ class PersonTest extends PHPUnit_Framework_TestCase {
             'md5' => '6ff9a302741e3cad66b03bbd26c5ec25',
             'width' => '600',
             'height' => '400',
-            'url' => 'http://ilyasah-site.virtuecenter.com/storage/2013-12-02-16/speaking.jpg'
+            'url' => 'http://ilyasah-site.virtuecenter.com/storage/2013-12-02-16/speaking.jpg',
         ];
         $this->person->photoSet($image);
         $person = $this->person->findById($id);
@@ -241,7 +259,8 @@ class PersonTest extends PHPUnit_Framework_TestCase {
     }
 */
 
-    public function testPersonClassify () {
+    public function testPersonClassify()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $tag = 'Testing';
@@ -254,7 +273,8 @@ class PersonTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($found);
     }
 
-    public function testPersonDeclassify () {
+    public function testPersonDeclassify()
+    {
         $id = new MongoId();
         $this->personCreate($id);
         $tag = 'Testing';
