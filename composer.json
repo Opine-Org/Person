@@ -20,7 +20,7 @@
     "require-dev": {
         "opine/db": "dev-master",
         "phpunit/phpunit": "3.7.32",
-        "opine/config": "dev-master",
+        "opine/config": "3.0.0",
         "opine/container": "dev-master"
     },
     "autoload": {
