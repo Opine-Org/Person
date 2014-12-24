@@ -7,21 +7,21 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Ryan Mahoney",
-            "email": "ryan@virtuecenter.com",
+            "name"    : "Ryan Mahoney",
+            "email"   : "ryan@virtuecenter.com",
             "homepage": "http://opine-php.org",
-            "role": "Developer"
+            "role"    : "Developer"
         }
     ],
     "require": {
-        "php": ">=5.5.0",
-        "opine/interfaces": "dev-master"
+        "php"             : ">=5.5.0",
+        "opine/interfaces": "1.0.0",
+        "opine/db"        : "dev-master",
+        "opine/config"    : "3.0.0",
+        "opine/container" : "dev-master"
     },
     "require-dev": {
-        "opine/db": "dev-master",
-        "phpunit/phpunit": "3.7.32",
-        "opine/config": "3.0.0",
-        "opine/container": "dev-master"
+        "phpunit/phpunit": "3.7.32"
     },
     "autoload": {
         "psr-4": {
